@@ -12,9 +12,6 @@ class Provider extends ServiceProvider
     public function register()
     {
         Descriptor::register();
-
-        /** @var Descriptor $a */
-        $a->abcd(GetUser::class)->zzz();
     }
 
     public function boot()
