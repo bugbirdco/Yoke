@@ -23,7 +23,8 @@ class Provider extends ServiceProvider
     {
         $this->app->make(Registrar::class)->group([
             'prefix' => '/yoke/lifecycle',
-            'as' => 'yoke.'
+            'as' => 'yoke.',
+            'middleware' => ['api']
         ], function (Registrar $router) {
             $router->post('/installed', Controller::class . '@installedEmitter')
                 ->name('lifecycle.installed');

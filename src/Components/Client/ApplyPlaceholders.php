@@ -2,6 +2,7 @@
 
 namespace BugbirdCo\Yoke\Components\Client;
 
+use BugbirdCo\Yoke\Models\Auth\Tenant;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
 
@@ -9,7 +10,8 @@ use Psr\Http\Message\RequestInterface;
  * Class ApplyPlaceholders
  * @package BugbirdCo\Yoke\Components\Client
  *
- * Scan through the request and replace the placeholders. Placeholders are in the format |\d+|.
+ * Scan through the request and replace the placeholders. Placeholders are in the format |\d+|
+ * or the |t:x| where x is a tenant property
  */
 class ApplyPlaceholders
 {
@@ -23,28 +25,29 @@ class ApplyPlaceholders
     public function __invoke(callable $next)
     {
         return function (RequestInterface $request, array $options) use ($next) {
-            if (!empty($this->client->getPlaceholderArgs())) {
+            $args = $this->client->getPlaceholderArgs() + [
+                    't:key' => $this->client->getTenant()->key
+                ];
 
-                foreach ($this->client->getPlaceholderArgs() as $key => $data) {
-                    $data = json_encode($data);
-                    $request = new Request(
-                        $request->getMethod(),
-                        str_replace(
-                            ["|{$key}|", "%7C{$key}%7C"],
-                            $data,
-                            $request->getUri()),
-                        array_map(function ($header) use ($key, $data) {
-                            return array_map(function ($value) use ($key, $data) {
-                                return str_replace(["|{$key}|", "%7C{$key}%7C"], $data, $value);
-                            }, $header);
-                        }, $request->getHeaders()),
-                        str_replace(
-                            ["|{$key}|", "%7C{$key}%7C"],
-                            $data,
-                            $request->getBody()),
-                        $request->getProtocolVersion()
-                    );
-                }
+            foreach ($args as $key => $data) {
+                $data = (string)$data;
+                $request = new Request(
+                    $request->getMethod(),
+                    str_replace(
+                        ["|{$key}|", "%7C{$key}%7C"],
+                        $data,
+                        $request->getUri()),
+                    array_map(function ($header) use ($key, $data) {
+                        return array_map(function ($value) use ($key, $data) {
+                            return str_replace(["|{$key}|", "%7C{$key}%7C"], $data, $value);
+                        }, $header);
+                    }, $request->getHeaders()),
+                    str_replace(
+                        ["|{$key}|", "%7C{$key}%7C"],
+                        $data,
+                        $request->getBody()),
+                    $request->getProtocolVersion()
+                );
             }
 
             return $next($request, $options);

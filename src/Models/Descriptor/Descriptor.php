@@ -5,34 +5,40 @@ namespace BugbirdCo\Yoke\Models\Descriptor;
 use BugbirdCo\Cabinet\Deferrer\DeferresAccess;
 use BugbirdCo\Cabinet\Model;
 use BugbirdCo\Yoke\Components\Client\Client;
+use BugbirdCo\Yoke\Components\Framework\Actions\GetMyself;
 use BugbirdCo\Yoke\Models\Descriptor\Action\Action;
 use BugbirdCo\Yoke\Models\Descriptor\Module\Module;
 use BugbirdCo\Yoke\Components\Lifecycle\Scheme;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Str;
 
 /**
  * Class Descriptor
  * @package BugbirdCo\Yoke\Models
  *
  * @property Module[] $modules
- * @property Action[] $actions
+ * @property string[] $actions
  * @property string $key
  * @property string $aliasKey
  * @property string $name
  * @property string $description
  * @property Vendor $vendor
  * @property Links $links
- * @property boolean $enableLicensing
+ * @property boolean $enable_licensing
  * @property string[] $scopes
  * @property object|null $translations
- * @property object|null $apiMigrations
- * @property object|null $regionBaseUrls
- * @property integer|null $apiVersion
+ * @property object|null $api_migrations
+ * @property object|null $region_base_urls
+ * @property integer|null $api_version
  * @property string|null $version
  */
 abstract class Descriptor extends Model
 {
+    protected static $internalActions = [
+        GetMyself::class
+    ];
+
     public static function register()
     {
         app()->singleton('yoke.descriptor', function () {
@@ -50,20 +56,25 @@ abstract class Descriptor extends Model
     public static function make($attrs = [])
     {
         return parent::make($attrs + [
-                'modules' => static::modules(),
-                'actions' => static::actions(),
+                'modules' => collect(static::modules())
+                    ->map(function ($module) {
+                        /** @var Module $module */
+                        return $module::make();
+                    })->toArray(),
+                'actions' => collect(static::actions())
+                    ->concat(static::$internalActions)->toArray(),
                 'key' => static::key(),
                 'aliasKey' => static::aliasKey(),
                 'name' => static::name(),
                 'description' => static::description(),
                 'vendor' => static::vendor(),
                 'links' => static::links(),
-                'enableLicensing' => static::isLicensable(),
+                'enable_licensing' => static::isLicensable(),
                 'scopes' => static::scopes(),
                 'translations' => static::translations(),
-                'apiMigrations' => static::apiMigrations(),
-                'regionBaseUrls' => static::regionBaseUrls(),
-                'apiVersion' => static::apiVersion(),
+                'api_migrations' => static::apiMigrations(),
+                'region_base_urls' => static::regionBaseUrls(),
+                'api_version' => static::apiVersion(),
                 'version' => static::version(),
             ]);
     }
@@ -148,16 +159,16 @@ abstract class Descriptor extends Model
 
     /**
      * @param string $action
-     * @param ...$arguments
-     * @return Action|object<$a>
+     * @return Action
      */
-    public function act($action, ...$arguments)
+    public function act($action)
     {
         /** @var Action $action */
         /** @var Client $client */
         $client = app('yoke.client');
-        $client->setPlaceholderArgs($arguments);
-        return new $action($action::request($client, $arguments));
+        $client->setPlaceholderArgs($action->getArgs());
+        if ($action->getTenant()) $client->setTenant($action->getTenant());
+        return $action->hydrate($action::request($client, $action->getArgs()));
     }
 
     public function jsonSerialize()
@@ -169,13 +180,15 @@ abstract class Descriptor extends Model
                 'baseUrl' => App::environment('production') ? config('app.url') : secure_url('/'),
                 'lifecycle' => $lifecycleScheme,
                 'modules' => (object)$this->getStaticModules()->groupBy('type')->toArray(),
-                'scope' => (object)$this->getScopes(),
-            ] + array_filter(
-                $this->attributes->raw(null, ['modules', 'actions', 'scopes']),
-                function ($item) {
+                'scopes' => $this->getScopes(),
+            ] + collect($this->attributes->raw(null, ['modules', 'actions', 'scopes']))
+                ->filter(function ($item) {
                     return !(empty($item) || (is_object($item) && $item instanceof DeferresAccess));
-                }
-            );
+                })
+                ->reduce(function ($data, $val, $key) {
+                    $data[Str::camel($key)] = $val;
+                    return $data;
+                }, []);
     }
 
     /** @var Module[]|Collection */
@@ -211,9 +224,11 @@ abstract class Descriptor extends Model
 
         return $this->_scopes
             ->concat($this->getModules()->pluck('scopes')->flatten())
-            ->concat($this->_actions->map(function (Action $action) {
+            ->concat($this->_actions->map(function ($action) {
+                /** @var Action $action */
                 return $action::scopes();
             })->flatten())
-            ->unique();
+            ->unique()
+            ->toArray();
     }
 }

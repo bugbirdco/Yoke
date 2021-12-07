@@ -2,7 +2,7 @@
 
 namespace BugbirdCo\Yoke\Components\Descriptor;
 
-use App\Yoke\Actions\GetUser;
+use App\Yoke\Actions\SetOrganisationToken;
 use BugbirdCo\Yoke\Models\Descriptor\Descriptor;
 use Illuminate\Contracts\Routing\Registrar;
 use Illuminate\Support\ServiceProvider;

@@ -1,21 +1,21 @@
 <?php
 
-namespace BugbirdCo\Yoke;
+namespace BugbirdCo\Yoke\Facades;
 
 use BugbirdCo\Yoke\Models\Descriptor\Action\Action;
-use BugbirdCo\Yoke\Models\Descriptor\Descriptor;
+use BugbirdCo\Yoke\Models\Descriptor\Descriptor as RealDescriptor;
 use Illuminate\Support\Facades\Facade;
 
 /**
- * Class DescriptorFacade
+ * Class Descriptor
  * @package BugbirdCo\Yoke
  *
  * @method static void register()
- * @method Action act(string|Action $action, ...$arguments)
+ * @method static Action act(string|Action $action, ...$arguments)
  *
- * @see Descriptor
+ * @see RealDescriptor
  */
-class DescriptorFacade extends Facade
+class Descriptor extends Facade
 {
     /**
      * Get the registered name of the component.

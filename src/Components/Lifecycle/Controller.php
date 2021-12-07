@@ -2,6 +2,7 @@
 
 namespace BugbirdCo\Yoke\Components\Lifecycle;
 
+use BugbirdCo\Cabinet\Data\JsonData;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
 
@@ -15,11 +16,17 @@ class Controller
     {
         /** @var Event $event */
         try {
-            $event = new $event(Payload::jsonMake(request()->getContent()));
+            $event = new $event(
+                new Payload(
+                    $event::validate(
+                        new JsonData(request()->getContent())
+                    )
+                )
+            );
         } catch (ValidationException $e) {
             return response()->json(null, 400);
         } catch (\Throwable $e) {
-            if(request()->wantsJson()) {
+            if (request()->wantsJson()) {
                 return response()->json(null, 500);
             }
             throw $e;
