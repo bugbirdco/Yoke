@@ -25,6 +25,8 @@ use Illuminate\Contracts\Validation\Validator;
  */
 class Payload extends Model
 {
+    const INSTALL_KEYS_URL = 'https://connect-install-keys.atlassian.com/';
+
     /**
      * Payload constructor.
      * @param Data $data

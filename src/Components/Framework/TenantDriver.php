@@ -4,6 +4,7 @@ namespace BugbirdCo\Yoke\Components\Framework;
 
 use BugbirdCo\Yoke\Models\Auth\Tenant;
 use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use Illuminate\Contracts\Auth\Authenticatable as UserContract;
 use Illuminate\Contracts\Auth\UserProvider;
 
@@ -49,7 +50,7 @@ class TenantDriver implements UserProvider
     public function validateCredentials(UserContract $user, array $credentials)
     {
         try {
-            JWT::decode($credentials['jwt'], $user->shared_secret, ['HS256']);
+            JWT::decode($credentials['jwt'], new Key($user->shared_secret, 'HS256'));
             return true;
         } catch (\Exception $e) {
             return false;
@@ -89,15 +90,15 @@ class TenantDriver implements UserProvider
      */
     public function updateRememberToken(UserContract $user, $token)
     {
-        $user->setRememberToken($token);
-
-        $timestamps = $user->timestamps;
-
-        $user->timestamps = false;
-
-        $user->save();
-
-        $user->timestamps = $timestamps;
+//        $user->setRememberToken($token);
+//
+//        $timestamps = $user->timestamps;
+//
+//        $user->timestamps = false;
+//
+//        $user->save();
+//
+//        $user->timestamps = $timestamps;
     }
 
     public function retrieveByCredentials(array $credentials)

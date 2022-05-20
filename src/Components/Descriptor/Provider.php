@@ -2,7 +2,7 @@
 
 namespace BugbirdCo\Yoke\Components\Descriptor;
 
-use App\Yoke\Actions\SetOrganisationToken;
+use BugbirdCo\Yoke\Components\Framework\Authenticate;
 use BugbirdCo\Yoke\Models\Descriptor\Descriptor;
 use Illuminate\Contracts\Routing\Registrar;
 use Illuminate\Support\ServiceProvider;
@@ -16,11 +16,20 @@ class Provider extends ServiceProvider
 
     public function boot()
     {
-        $this->app->make(Registrar::class)->get(
+        /** @var Registrar $routeRegistrar */
+        $routeRegistrar = $this->app->make(Registrar::class);
+
+        $routeRegistrar->get(
             '/yoke/atlassian-connect.json',
-            function () {
-                return response()->json(app('yoke.descriptor'));
-            }
-        )->name('yoke.descriptor');
+            YieldDescriptionController::class
+        )
+            ->name('yoke.descriptor');
+
+        $routeRegistrar->get(
+            '/yoke/handle/{content}',
+            ContentHandlerController::class
+        )
+            ->middleware('web', Authenticate::class)
+            ->name('yoke.handle-content');
     }
 }

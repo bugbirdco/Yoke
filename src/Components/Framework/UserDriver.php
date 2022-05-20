@@ -7,6 +7,7 @@ use BugbirdCo\Yoke\Facades\Descriptor;
 use BugbirdCo\Yoke\Models\Auth\Tenant;
 use BugbirdCo\Yoke\Models\Auth\User;
 use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use GuzzleHttp\Exception\ClientException;
 use Illuminate\Contracts\Auth\Authenticatable as UserContract;
 use Illuminate\Contracts\Auth\UserProvider;
@@ -48,7 +49,7 @@ class UserDriver implements UserProvider
         try {
             /** @var Tenant $tenant */
             $tenant = app('yoke.yield_tenant');
-            $body = JWT::decode($credentials['jwt'], $tenant->shared_secret, ['HS256']);
+            $body = JWT::decode($credentials['jwt'], new Key($tenant->shared_secret, 'HS256'));
             return !empty($body->sub) && $user->account_id == $body->sub;
         } catch (\Exception $e) {
             return false;

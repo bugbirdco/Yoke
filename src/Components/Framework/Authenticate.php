@@ -11,7 +11,7 @@ class Authenticate extends Middleware
         if ($jwt = $request->get('jwt', $request->has('authorization'))) {
             if ($this->auth->guard(config('yoke.tenant.guard'))->attempt(['jwt' => $jwt])) {
                 $this->auth->guard(config('yoke.user.guard'))->attempt(['jwt' => $jwt]);
-                return;
+                return config('yoke.user.guard');
             }
         }
         parent::authenticate($request, $guards);

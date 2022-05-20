@@ -24,7 +24,7 @@ abstract class Module extends Model
 
     public $exclude = ['type'];
 
-    protected static function getKey()
+    public static function getKey()
     {
         return Str::snake(
             str_replace(
@@ -45,11 +45,10 @@ abstract class Module extends Model
      */
     protected static function getLocation($location = null)
     {
-        /** @noinspection Annotator */
-        /** @var static $location */
         $location = $location ?? static::location();
 
         if (is_string($location) && str_contains($location, '\\')) {
+            /** @var static $location */
             if ($location::$isRoot) return $location::getKey();
             else {
                 $parent = $location::location();
@@ -62,7 +61,6 @@ abstract class Module extends Model
 
     public static function make($attrs = []): Module
     {
-        /** @noinspection Annotator */
         return parent::make($attrs + [
                 'type' => static::type(),
                 'scopes' => static::scopes(),
